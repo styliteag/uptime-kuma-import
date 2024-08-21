@@ -1,7 +1,8 @@
-# Sync a Text file to uptime-kuma to create checks in bulk
-# It is possible to check for timeouts, keywords, and status codes
+Sync a Text file to uptime-kuma to create checks in bulk
+It is possible to check for timeouts, keywords, and status codes
 
-# There is alos a check_mk plugin that can be used to monitor the uptime-kuma checks
+There is also a check_mk plugin that can be used to monitor the uptime-kuma checks
+at https://github.com/styliteag/uptime-kuma-checkmk-plugin
 
 ```shell
 
