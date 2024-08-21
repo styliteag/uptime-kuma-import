@@ -1,0 +1,45 @@
+#
+# Default keyword (From here to the rest of the config file)
+keyword=/html
+#
+# Keywords for checks which contains this in the name
+keyword bbb bigbluebutton
+keyword nextcloud Login
+#
+# Keywords for checks which contains this in the URL
+keyword_url nextcloud login
+
+#
+# specify default warn (From here to the rest of the config file)
+warn=500
+#
+# override Checks by name
+# in ms
+warn bbb 500
+warn nextcloud 3000
+
+# These are the defaults (If you specify them her for the rest of the file)
+#interval=120
+#retryInterval=120
+#resendInterval=60
+#maxretries=3
+## seconds after the monitor is considered as down
+#timeout=10
+#expiryNotification=0
+
+# We can also override them by Name
+#interval bbb 180
+#resendInterval bbb 60
+#timeout bbb 12
+
+
+# The logic here is
+# If a Line contains no ":" it is a Groupname
+# If a Line is parsed/contains a URL and a keyword
+# if () is there it will be parsed for 999ms (milliseconds)
+
+Websites
+www: https://www.stylite.de Stylite (200ms)
+ag: https://www.stylite.ag Stylite
+google: https://google.com
+heise: https://www.heise.de
