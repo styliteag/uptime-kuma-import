@@ -5,7 +5,7 @@ import time
 import json
 import re
 import sys
-from dotenv import load_dotenv
+#from dotenv import load_dotenv
 import configparser
 from uptime_kuma_api import UptimeKumaApi, MonitorType
 
@@ -27,10 +27,12 @@ def edit_monitor_with_retry(func, id, **kwargs):
   while not success:
     try:
         if func == "add":
-          #print(f"  Add Monitor: {kwargs['name']}")
+          if verbose:
+            print(f"  Add Monitor: {kwargs['name']}")
           result = api.add_monitor(**kwargs)
         elif func == "edit":
-          #print(f"  Edit Monitor: {id}")
+          if verbose:
+            print(f"  Edit Monitor: {id}")
           result = api.edit_monitor(id, **kwargs)
         else:
           print("Unknown function")
@@ -53,24 +55,31 @@ def edit_monitor_with_retry(func, id, **kwargs):
               time.sleep(2)
               lsuccess = False
 
-# Create a config_filename wich is the path iand the name of this script without the extension and with .ini
-config_file_name = os.path.splitext(sys.argv[0])[0]+".ini"
-#print(f"Config File: {config_file_name}")
-  
-do_updates = False
-
 if "-h" in sys.argv:
   print(f"Usage: {sys.argv[0]} [-u] [-f input_file] [-c config_file]")
+  print("  -h: show this help")
   print("  -u: update the existing monitors")
-  print("  -f input_file: use the file input_file as input")
-  print("  -c config_file: use the config file")
+  print("  -c config_file: use the config file (default: SCRIPTNAME.ini)")
+  print("  -f input_file: use the file input_file as input (default: urls.txt)")
+  print("  -v: verbose output")
   exit(0)
+
+verbose = False
+if "-v" in sys.argv:
+  verbose = True
+
+do_updates = False
 if "-u" in sys.argv:
   do_updates = True
   
 input_file_name = "urls.txt"
+
 if "-f" in sys.argv:
   input_file_name = sys.argv[sys.argv.index("-f")+1]
+
+# Create a config_filename wich is the path iand the name of this script without the extension and with .ini
+config_file_name = os.path.splitext(sys.argv[0])[0]+".ini"
+#print(f"Config File: {config_file_name}")
 
 if "-c" in sys.argv:
   config_file_name = sys.argv[sys.argv.index("-c")+1]
@@ -99,13 +108,16 @@ if password is None:
   print("No PASSWORD given")
   exit(1)
 
-#print(f"Base URL: {base_url}")
-#print(f"Username: {username}")
-#print(f"Password: {password}")
+if verbose:
+  print(f"Base URL: {base_url}")
+  print(f"Username: {username}")
+  #print(f"Password: {password}")
 api = UptimeKumaApi(base_url ,timeout=api_timeout)
-#print(f"API: {api}")
+#if verbose:
+#  print(f"API: {api}")
 api.login(username, password)
-#print(f"API: {api}")
+if verbose:
+  print(f"API: {api}")
 
 monitors = api.get_monitors()
 #print(json.dumps(monitors, indent=2))
@@ -120,7 +132,8 @@ for monitor in monitors:
   monitor_name.append(monitor["name"])
   monitor_pathname.append(monitor["pathName"])
   monitor_type.append(monitor["type"])
-  #print(f"Monitor ID: {monitor['id']}, Name: {monitor['name']}, Type: {monitor['type']}, PathName: {monitor['pathName']}")
+  if verbose:
+    print(f"Monitor ID: {monitor['id']}, Name: {monitor['name']}, Type: {monitor['type']}, PathName: {monitor['pathName']}")
 
 # Find the parent Group ID
 parent_group_id = 0
