@@ -2,7 +2,7 @@
 
 import os
 import time
-#import json
+import json
 import re
 import sys
 from dotenv import load_dotenv
@@ -103,10 +103,12 @@ if password is None:
 #print(f"Username: {username}")
 #print(f"Password: {password}")
 api = UptimeKumaApi(base_url ,timeout=api_timeout)
+#print(f"API: {api}")
 api.login(username, password)
+#print(f"API: {api}")
 
 monitors = api.get_monitors()
-#print(json.dumps(result, indent=2))
+#print(json.dumps(monitors, indent=2))
 
 # Get all Mointors IDs from pages
 monitor_id = []
