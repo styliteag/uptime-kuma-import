@@ -235,7 +235,17 @@ with open(input_file_name, 'r') as file:
         group = rest
         if verbose:
           print(f"   Group: {group}")
-        continue  
+        continue
+      if keyword == "prefix":
+        prefix = rest
+        if verbose:
+          print(f"   Prefix: {prefix}")
+        continue
+      if keyword == "suffix":
+        suffix = rest
+        if verbose:
+          print(f"   Suffix: {suffix}")
+        continue
       if keyword == "keyword_default":
         check_for_default = rest
         continue
@@ -324,10 +334,12 @@ with open(input_file_name, 'r') as file:
     
     # Wenn kein : enthalten ist, dann ist es ein Gruppenname
     if ":" not in line:
-      name = line
+      #name = line
       do_special = False
       name1 = ""
       name2 = ""
+      prefix = line
+      suffix = ""
 
       # When ein - drin ist verändere den Namen/reihenfolge
       #print(f"Group: {line}")
@@ -338,6 +350,8 @@ with open(input_file_name, 'r') as file:
           #print(f"  parts: {parts}")
           name1 = parts[0].strip()
           name2 = parts[1].strip()
+          prefix = name1
+          suffix = name2
           do_special = True
           #print(f"  name1: {name1}, name2: {name2}")
       continue
@@ -423,7 +437,12 @@ with open(input_file_name, 'r') as file:
 
     #print(f"Name: {check}, URL: {url}, Check for: {check_for}, Interval: {interval}, retryInterval: {retryInterval}, resendInterval: {resendInterval}, maxretries: {maxretries}, timeout: {timeout}, expiryNotification: {expiryNotification}, check_mk_hint: {check_mk_hint}")
     #print(f"name1: {name1}, name2: {name2}")
-    myname = f"{name} - {check}"
+    myname = check
+    if prefix != "":
+      myname = prefix + " - " + myname
+    if suffix != "":
+      myname = myname + " - " + suffix
+    #myname = f"{name} - {check}"
     if do_special:
       myname = f"{name2} - {check} - {name1}"
 
