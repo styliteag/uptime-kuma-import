@@ -1,45 +1,54 @@
 #
 # Default keyword (From here to the rest of the config file)
-keyword=/html
+!keyword /html
 #
 # Keywords for checks which contains this in the name
-keyword bbb bigbluebutton
-keyword nextcloud Login
+!keyword bbb bigbluebutton
+!keyword nextcloud Login
 #
 # Keywords for checks which contains this in the URL
-keyword_url nextcloud login
+!keyword_url nextcloud login
 
 #
 # specify default warn (From here to the rest of the config file)
-warn=500
+!warn 500
 #
 # override Checks by name
 # in ms
-warn bbb 500
-warn nextcloud 3000
+!warn bbb 500
+!warn nextcloud 3000
 
 # These are the defaults (If you specify them her for the rest of the file)
-#interval=120
-#retryInterval=120
-#resendInterval=60
-#maxretries=3
+#!interval 120
+#!retryInterval 120
+#!resendInterval 60
+#!maxretries 3
 ## seconds after the monitor is considered as down
-#timeout=10
-#expiryNotification=0
+#!timeout 10
+#!expiryNotification 0
 
 # We can also override them by Name
-#interval bbb 180
-#resendInterval bbb 60
-#timeout bbb 12
+#!interval bbb 180
+#!resendInterval bbb 60
+#!timeout bbb 12
 
 
 # The logic here is
-# If a Line contains no ":" it is a Groupname
+# If a Line contains no ":" it is a Prefix for a Checkname
+#  lines containing no : are prefixes/suffixes for checknames
+#     The Rule is here:
+#       if the name contains a "-"
+#       then the part before the "-" is the suffix
+#       and the part after the "-" is the prefix
 # If a Line is parsed/contains a URL and a keyword
 # if () is there it will be parsed for 999ms (milliseconds)
 
+# This will be in the default group (AutoCheck)
 Websites
 www: https://www.stylite.de Stylite (200ms)
 ag: https://www.stylite.ag Stylite
+
+# This will be in the group "Websites"
+!group External
 google: https://google.com
 heise: https://www.heise.de
