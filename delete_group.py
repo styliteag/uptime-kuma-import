@@ -4,7 +4,7 @@ import os
 import sys
 import json
 import configparser
-from dotenv import load_dotenv
+#from dotenv import load_dotenv
 from uptime_kuma_api import UptimeKumaApi, MonitorType
 
 # default values
@@ -15,6 +15,7 @@ if "-h" in sys.argv:
   print(f"Usage: {sys.argv[0]} [-h] [-c config_file] [-v]")
   print("  -h: show this help")
   print("  -c config_file: use the config file (default: SCRIPTNAME.ini)")
+  print("  -g groupname: delete all monitors in this group (default: default_group from config)")
   print("  -v: verbose output")
   exit(0)
 
@@ -36,6 +37,10 @@ if not os.path.exists(config_file_name):
   print(f"Config File {config_file_name} not found")
   exit(1)
 
+my_group = ""
+if "-g" in sys.argv:
+  my_group = sys.argv[sys.argv.index("-g")+1]
+
 # Read the config file
 config = configparser.ConfigParser()
 config.read(config_file_name)
@@ -44,7 +49,10 @@ config.read(config_file_name)
 base_url = config.get("uptimekuma", "base_url")
 username = config.get("uptimekuma", "username")
 password = config.get("uptimekuma", "password")
-parent = config.get("uptimekuma", "parent", fallback="AutoChecks")
+if my_group == "":
+  default_group = config.get("uptimekuma", "default_group", fallback="AutoChecks")
+else:
+  default_group = my_group
 
 if base_url is None:
   print("No BASE_URL given")
@@ -88,7 +96,7 @@ for monitor in monitors:
 # Find the parent Group ID
 parent_group_id = 0
 for i in range(len(monitor_id)):
-  if monitor_name[i] == parent and monitor_type[i] == "group":
+  if monitor_name[i] == default_group and monitor_type[i] == "group":
     parent_group_id = monitor_id[i]
     break
   else:
