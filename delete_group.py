@@ -108,4 +108,9 @@ for i in range(len(monitor_id)):
     print(f"Deleting Monitor ID: {monitor_id[i]} Name: {monitor_name[i]} Type: {monitor_type[i]} PathName: {monitor_pathname[i]}")
     api.delete_monitor(monitor_id[i])
 
+# Delete the Group itself
+if parent_group_id != 0:
+  print(f"Deleting Group ID: {parent_group_id} Name: {default_group}")
+  api.delete_monitor(parent_group_id)
+
 api.disconnect()
