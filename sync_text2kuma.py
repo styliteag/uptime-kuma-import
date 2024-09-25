@@ -55,6 +55,50 @@ def edit_monitor_with_retry(func, id, **kwargs):
               time.sleep(2)
               lsuccess = False
 
+def create_group(name):
+  global api, api_timeout, base_url, username, password, groups
+
+  if verbose:
+    print(f"  Create Group: {name}")
+
+  if name in groups:
+    if verbose:
+      print(f" Group {name} already exists with ID {groups[name]}")
+    return groups[name]
+
+  success = False
+  while not success:
+    try:
+      result = api.add_monitor(
+          type="group", 
+          name=name,
+          description=f"{name}"
+      )
+      if verbose:
+        print(json.dumps(result, indent=2))
+        print(f"  Group {name} created with ID {result['monitorID']}")
+
+      success = True
+    except Exception as e:
+        print( "  An exception occurred:", type(e).__name__, "–", e)
+        #print(f"  retrying: {id}")
+        success = False
+        #api.disconnect()
+        #api = UptimeKumaApi(base_url ,timeout=api_timeout)
+        lsuccess = False
+        while not lsuccess:
+          try:
+              #print(f"  Login again: {username}")
+              api.login(username, password)
+              lsuccess = True
+          except Exception:
+              #print("Login failed")
+              time.sleep(2)
+              lsuccess = False
+    monitor_id = result["monitorID"]
+    groups[name] = monitor_id
+    return monitor_id
+
 if "-h" in sys.argv:
   print(f"Usage: {sys.argv[0]} [-u] [-f input_file] [-c config_file]")
   print("  -h: show this help")
@@ -96,7 +140,7 @@ config.read(config_file_name)
 base_url = config.get("uptimekuma", "base_url")
 username = config.get("uptimekuma", "username")
 password = config.get("uptimekuma", "password")
-parent = config.get("uptimekuma", "parent", fallback="AutoChecks")
+group = config.get("uptimekuma", "default_group", fallback="AutoChecks")
 
 if base_url is None:
   print("No BASE_URL given")
@@ -135,19 +179,13 @@ for monitor in monitors:
   if verbose:
     print(f"Monitor ID: {monitor['id']}, Name: {monitor['name']}, Type: {monitor['type']}, PathName: {monitor['pathName']}")
 
-# Find the parent Group ID
-parent_group_id = 0
+# Find all groups in the Instance
+groups = {}
 for i in range(len(monitor_id)):
-  if monitor_name[i] == parent and monitor_type[i] == "group":
-    parent_group_id = monitor_id[i]
-    break
-  else:
-    parent_group_id = 0
-
-if parent_group_id == 0:
-  print(f"Parent Group {parent} not found")
-  exit(1)
-
+  if monitor_type[i] == "group":
+    groups[monitor_name[i]] = monitor_id[i]
+    if verbose:
+      print(f"  found Group: {monitor_name[i]} with ID {monitor_id[i]}")
 
 #######################################################################################################################
 # Read the input file
@@ -184,99 +222,104 @@ with open(input_file_name, 'r') as file:
     if len(line) == 0:
       continue
 
-    if line.startswith("keyword="):
-      check_for_default = line.split("=")[1]
-      continue
-    url_suffix = url_suffix_default
-    if line.startswith("keyword_url="):
-      url_suffix_default = line.split("=")[1]
-      continue
-    check_for = check_for_default
-    if line.startswith("warn="):
-      # Set a new default for the check_mk_warn for the rest of the file
-      check_mk_warn_default = int(line.split("=")[1])
-      continue
-    check_mk_warn = check_mk_warn_default
-    if line.startswith("interval="):
-      interval = int(line.split("=")[1])
-      continue
-    if line.startswith("retryInterval="):
-      retryInterval = int(line.split("=")[1])
-      continue
-    if line.startswith("resendInterval="):
-      resendInterval = int(line.split("=")[1])
-      continue
-    if line.startswith("maxretries="):
-      maxretries = int(line.split("=")[1])
-      continue
-    if line.startswith("timeout="):
-      timeout = int(line.split("=")[1])
-      continue
-    if line.startswith("expiryNotification="):
-      expiryNotification1 = int(line.split("=")[1])
-      if expiryNotification1 == 1:
-        expiryNotification = True
-      else:
-        expiryNotification = False
-      continue
-    if line.startswith("warn "):
-      parts = line.split(" ",2)
-      search = parts[1]
-      warntime = int(parts[2])
-      warntimes[search] = warntime
-      continue
-    if line.startswith("keyword "):
-      parts = line.split(" ",2)
-      search = parts[1]
-      keyword = parts[2]
-      keywords[search] = keyword
-      continue
-    if line.startswith("keyword_url "):
-      parts = line.split(" ",2)
-      search = parts[1]
-      keyword = parts[2]
-      keyword_urls[search] = keyword
-      continue
-    if line.startswith("interval "):
-      parts = line.split(" ",2)
-      search = parts[1]
-      interval = int(parts[2])
-      intervals[search] = interval
-      continue
-    if line.startswith("retryInterval "):
-      parts = line.split(" ",2)
-      search = parts[1]
-      retryInterval = int(parts[2])
-      retryIntervals[search] = retryInterval
-      continue
-    if line.startswith("resendInterval "):
-      parts = line.split(" ",2)
-      search = parts[1]
-      resendInterval = int(parts[2])
-      resendIntervals[search] = resendInterval
-      continue
-    if line.startswith("maxretries "):
-      parts = line.split(" ",2)
-      search = parts[1]
-      maxretries = int(parts[2])
-      maxretriess[search] = maxretries
-      continue
-    if line.startswith("timeout "):
-      parts = line.split(" ",2)
-      search = parts[1]
-      timeout = int(parts[2])
-      timeouts[search] = timeout
-      continue
-    if line.startswith("expiryNotification "):
-      parts = line.split(" ",2)
-      search = parts[1]
-      expiryNotification1 = int(parts[2])
-      if expiryNotification1 == 1:
-        expiryNotification = True
-      else:
-        expiryNotification = False
-      expiryNotifications[search] = expiryNotification
-      continue
+    if line.startswith("!"):
+      # This is a command
+      # Remove the !
+      line = line[1:]
+      parts = line.split(" ")
+      keyword = parts[0]
+      rest = " ".join(parts[1:])
+
+      # Check the commands
+      if keyword == "group":
+        group = rest
+        if verbose:
+          print(f"   Group: {group}")
+        continue  
+      if keyword == "keyword_default":
+        check_for_default = rest
+        continue
+      #url_suffix = url_suffix_default
+      if keyword == "url_suffix_default":
+        url_suffix_default = rest
+        continue
+      #check_for = check_for_default
+      if keyword == "warn_default":
+        # Set a new default for the check_mk_warn for the rest of the file
+        check_mk_warn_default = int(rest)
+        continue
+      #check_mk_warn = check_mk_warn_default
+      if keyword == "interval_default":
+        interval = int(rest)
+        continue
+      if keyword == "retryInterval_default":
+        retryInterval = int(rest)
+        continue
+      if keyword == "resendInterval_default":
+        resendInterval = int(rest)
+        continue
+      if keyword == "maxretries_default":
+        maxretries = int(rest)
+        continue
+      if keyword == "timeout_default":
+        timeout = int(rest)
+        continue
+      if keyword == "expiryNotification_default":
+        expiryNotification1 = int(rest)
+        if expiryNotification1 == 1:
+          expiryNotification = True
+        else:
+          expiryNotification = False
+        continue
+      if keyword == "warn":
+        search = parts[1]
+        warntime = int(parts[2])
+        warntimes[search] = warntime
+        continue
+      if keyword == "keyword":
+        search = parts[1]
+        keyword = parts[2]
+        keywords[search] = keyword
+        continue
+      if keyword == "keyword_url":
+        search = parts[1]
+        keyword = parts[2]
+        keyword_urls[search] = keyword
+        continue
+      if keyword == "interval":
+        search = parts[1]
+        interval = int(parts[2])
+        intervals[search] = interval
+        continue
+      if keyword == "retryInterval":
+        search = parts[1]
+        retryInterval = int(parts[2])
+        retryIntervals[search] = retryInterval
+        continue
+      if keyword == "resendInterval":
+        search = parts[1]
+        resendInterval = int(parts[2])
+        resendIntervals[search] = resendInterval
+        continue
+      if keyword == "maxretries":
+        search = parts[1]
+        maxretries = int(parts[2])
+        maxretriess[search] = maxretries
+        continue
+      if keyword == "timeout":
+        search = parts[1]
+        timeout = int(parts[2])
+        timeouts[search] = timeout
+        continue
+      if keyword == "expiryNotification":
+        search = parts[1]
+        expiryNotification1 = int(parts[2])
+        if expiryNotification1 == 1:
+          expiryNotification = True
+        else:
+          expiryNotification = False
+        expiryNotifications[search] = expiryNotification
+        continue
 
     
     # Wenn kein : enthalten ist, dann ist es ein Gruppenname
@@ -387,6 +430,19 @@ with open(input_file_name, 'r') as file:
     check_type=MonitorType.HTTP
     if check_for != "":
       check_type=MonitorType.KEYWORD
+
+    # Find the group ID
+    group_id = 0
+    if group in groups:
+      group_id = groups[group]
+    else:
+      if verbose:
+        print(f"Group {group} not found")
+      group_id = create_group(group)
+      if group_id == 0:
+        print(f"Group {group} could not be created")
+        exit(1)
+      
     # Check if the Monitor already exists
     if myname in monitor_name:
       #id=monitor_name.index(myname)
@@ -400,7 +456,7 @@ with open(input_file_name, 'r') as file:
           type=check_type,
           name=myname,
           url=url,
-          parent=parent_group_id,
+          parent=group_id,
           keyword=check_for,
           interval=interval,
           retryInterval=retryInterval,
@@ -419,7 +475,7 @@ with open(input_file_name, 'r') as file:
           type=check_type,
           name=myname,
           url=url,
-          parent=parent_group_id,
+          parent=group_id,
           keyword=check_for,
           interval=interval,
           retryInterval=retryInterval,
