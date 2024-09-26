@@ -106,6 +106,7 @@ if "-h" in sys.argv:
   print("  -c config_file: use the config file (default: SCRIPTNAME.ini)")
   print("  -f input_file: use the file input_file as input (default: urls.txt)")
   print("  -v: verbose output")
+  print("  -n: no updates, just show what would be done (dry run)")
   exit(0)
 
 verbose = False
@@ -115,6 +116,10 @@ if "-v" in sys.argv:
 do_updates = False
 if "-u" in sys.argv:
   do_updates = True
+
+try_only = False
+if "-n" in sys.argv:
+  try_only = True
   
 input_file_name = "urls.txt"
 
@@ -457,9 +462,10 @@ with open(input_file_name, 'r') as file:
     else:
       if verbose:
         print(f"Group {group} not found")
-      group_id = create_group(group)
-      if group_id == 0:
-        print(f"Group {group} could not be created")
+      if not try_only:
+        group_id = create_group(group)
+        if group_id == 0:
+          print(f"Group {group} could not be created")
         exit(1)
       
     # Check if the Monitor already exists
@@ -471,9 +477,10 @@ with open(input_file_name, 'r') as file:
       if not do_updates:
         print(f"  Not updating {myname}")
         continue
-      edit_monitor_with_retry("edit", id,
-          type=check_type,
-          name=myname,
+      if not try_only:
+        edit_monitor_with_retry("edit", id,
+            type=check_type,
+            name=myname,
           url=url,
           parent=group_id,
           keyword=check_for,
@@ -490,7 +497,8 @@ with open(input_file_name, 'r') as file:
       continue
 
     print(f"  Monitor add: {myname}")
-    edit_monitor_with_retry("add", 0,
+    if not try_only:
+      edit_monitor_with_retry("add", 0,
           type=check_type,
           name=myname,
           url=url,
