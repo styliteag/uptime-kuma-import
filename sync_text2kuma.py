@@ -28,11 +28,11 @@ def edit_monitor_with_retry(func, id, **kwargs):
     try:
         if func == "add":
           if verbose:
-            print(f"  Add Monitor: {kwargs['name']}")
+            print(f"  Add Monitor: '{kwargs['name']}'")
           result = api.add_monitor(**kwargs)
         elif func == "edit":
           if verbose:
-            print(f"  Edit Monitor: {id}")
+            print(f"  Edit Monitor: '{id}'")
           result = api.edit_monitor(id, **kwargs)
         else:
           print("Unknown function")
@@ -145,7 +145,7 @@ config.read(config_file_name)
 base_url = config.get("uptimekuma", "base_url")
 username = config.get("uptimekuma", "username")
 password = config.get("uptimekuma", "password")
-group = config.get("uptimekuma", "default_group", fallback="AutoChecks")
+group = config.get("uptimekuma", "default_group", fallback="AutoCheck")
 
 if base_url is None:
   print("No BASE_URL given")
@@ -201,7 +201,7 @@ check_for_default = ""
 check_for = ""
 url_suffix = ""
 url_suffix_default = ""
-do_special = False
+#do_special = False
 name1 = ""
 name2 = ""
 warntimes = {}
@@ -350,7 +350,7 @@ with open(input_file_name, 'r') as file:
       
     if ":" not in line:
       #name = line
-      do_special = False
+      #do_special = False
       name1 = ""
       name2 = ""
       prefix = line
@@ -358,16 +358,16 @@ with open(input_file_name, 'r') as file:
 
       # When ein - drin ist verändere den Namen/reihenfolge
       #print(f"Group: {line}")
-      if "-" in name:
-        # Verstausche die beiden Teile
-        parts = name.split("-",1)
+      if "-" in line:
+        # Verstausche die beiden Teile und setze den suffix
+        parts = line.split("-",1)
         if len(parts) > 0:
           #print(f"  parts: {parts}")
           name1 = parts[0].strip()
           name2 = parts[1].strip()
-          prefix = name1
-          suffix = name2
-          do_special = True
+          prefix = name2
+          suffix = name1
+          #do_special = True
           #print(f"  name1: {name1}, name2: {name2}")
       continue
     else:
@@ -458,8 +458,9 @@ with open(input_file_name, 'r') as file:
     if suffix != "":
       myname = myname + " - " + suffix
     #myname = f"{name} - {check}"
-    if do_special:
-      myname = f"{name2} - {check} - {name1}"
+    #if do_special:
+    #  myname = f"{check} - {name2} - {name1}"
+    #  print(f"  do_special: {myname}")
 
     check_type=MonitorType.HTTP
     if check_for != "":
@@ -483,9 +484,9 @@ with open(input_file_name, 'r') as file:
       #id=monitor_name.index(myname)
       id=monitor_id[monitor_name.index(myname)]
       #continue
-      print(f"  Monitor edit: {myname} already exists")
+      print(f"  Monitor edit: '{myname}' already exists")
       if not do_updates:
-        print(f"  Not updating {myname}")
+        print(f"  Not updating '{myname}'")
         continue
       if not try_only:
         edit_monitor_with_retry("edit", id,
@@ -506,7 +507,7 @@ with open(input_file_name, 'r') as file:
 
       continue
 
-    print(f"  Monitor add: {myname}")
+    print(f"  Monitor add: '{myname}'")
     if not try_only:
       edit_monitor_with_retry("add", 0,
           type=check_type,
