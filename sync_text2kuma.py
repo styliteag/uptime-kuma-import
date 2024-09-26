@@ -234,6 +234,9 @@ with open(input_file_name, 'r') as file:
       parts = line.split(" ")
       keyword = parts[0]
       rest = " ".join(parts[1:])
+      if verbose:
+        print(f"Command: {keyword}, Rest: {rest}")
+        print(json.dumps(parts, indent=2))
 
       # Check the commands
       if keyword == "group":
@@ -286,58 +289,65 @@ with open(input_file_name, 'r') as file:
         else:
           expiryNotification = False
         continue
-      if keyword == "warn":
-        search = parts[1]
-        warntime = int(parts[2])
-        warntimes[search] = warntime
+      # check if we have two argument
+      if len(parts) <= 2:
+        print(f"WARNING:Not enough arguments for {keyword}")
+        #print(json.dumps(parts, indent=2))
         continue
-      if keyword == "keyword":
-        search = parts[1]
-        keyword = parts[2]
-        keywords[search] = keyword
-        continue
-      if keyword == "keyword_url":
-        search = parts[1]
-        keyword = parts[2]
-        keyword_urls[search] = keyword
-        continue
-      if keyword == "interval":
-        search = parts[1]
-        interval = int(parts[2])
-        intervals[search] = interval
-        continue
-      if keyword == "retryInterval":
-        search = parts[1]
-        retryInterval = int(parts[2])
-        retryIntervals[search] = retryInterval
-        continue
-      if keyword == "resendInterval":
-        search = parts[1]
-        resendInterval = int(parts[2])
-        resendIntervals[search] = resendInterval
-        continue
-      if keyword == "maxretries":
-        search = parts[1]
-        maxretries = int(parts[2])
-        maxretriess[search] = maxretries
-        continue
-      if keyword == "timeout":
-        search = parts[1]
-        timeout = int(parts[2])
-        timeouts[search] = timeout
-        continue
-      if keyword == "expiryNotification":
-        search = parts[1]
-        expiryNotification1 = int(parts[2])
-        if expiryNotification1 == 1:
-          expiryNotification = True
-        else:
-          expiryNotification = False
-        expiryNotifications[search] = expiryNotification
-        continue
-
-    
-    # Wenn kein : enthalten ist, dann ist es ein Gruppenname
+      else:
+        p1 = parts[1]
+        p2 = parts[2]
+        if keyword == "warn":
+          search = p1
+          warntime = int(p2)
+          warntimes[search] = warntime
+          continue
+        if keyword == "keyword":
+          search = p1
+          keyword = p2
+          keywords[search] = keyword
+          continue
+        if keyword == "keyword_url":
+          search = p1
+          keyword = p2
+          keyword_urls[search] = keyword
+          continue
+        if keyword == "interval":
+          search = p1
+          interval = int(p2)
+          intervals[search] = interval
+          continue
+        if keyword == "retryInterval":
+          search = p1
+          retryInterval = int(p2)
+          retryIntervals[search] = retryInterval
+          continue
+        if keyword == "resendInterval":
+          search = p1
+          resendInterval = int(p2)
+          resendIntervals[search] = resendInterval
+          continue
+        if keyword == "maxretries":
+          search = p1
+          maxretries = int(p2)
+          maxretriess[search] = maxretries
+          continue
+        if keyword == "timeout":
+          search = p1
+          timeout = int(p2)
+          timeouts[search] = timeout
+          continue
+        if keyword == "expiryNotification":
+          search = p1
+          expiryNotification1 = int(p2)
+          if expiryNotification1 == 1:
+            expiryNotification = True
+          else:
+            expiryNotification = False
+          expiryNotifications[search] = expiryNotification
+          continue
+      print(f"Unknown Command: {line}")
+      
     if ":" not in line:
       #name = line
       do_special = False
