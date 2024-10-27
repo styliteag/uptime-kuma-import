@@ -23,7 +23,7 @@ wait_events=2 # seconds Default is 0.2
 
 
 def edit_monitor_with_retry(func, id, **kwargs):
-  global api, api_timeout, base_url, username, password
+  global api, username, password
   success = False
   while not success:
     try:
@@ -44,8 +44,6 @@ def edit_monitor_with_retry(func, id, **kwargs):
         #print( "  An exception occurred:", type(e).__name__, "–", e)
         #print(f"  retrying: {id}")
         success = False
-        #api.disconnect()
-        #api = UptimeKumaApi(base_url ,timeout=api_timeout)
         lsuccess = False
         while not lsuccess:
           try:
@@ -60,9 +58,9 @@ def edit_monitor_with_retry(func, id, **kwargs):
     return 0
   
 def remove_tags(monitor_id, tags):
-  global api, api_timeout, base_url, username, password
-  global tag_id
-  print(f"  Remove unused tags from Monitor {monitor_id}")
+  global api, username, password
+  if verbose:
+    print(f"  Remove unused tags from Monitor {monitor_id}")
   result = api.get_monitor(monitor_id)
   #print(json.dumps(result, indent=2))
   monitor_tags = result["tags"]
@@ -104,8 +102,6 @@ def add_tag(monitor_id, tag_id):
         #print( "  An exception occurred:", type(e).__name__, "–", e)
         #print(f"  retrying: {id}")
         success = False
-        #api.disconnect()
-        #api = UptimeKumaApi(base_url ,timeout=api_timeout)
         lsuccess = False
         while not lsuccess:
           try:
@@ -120,7 +116,7 @@ def add_tag(monitor_id, tag_id):
     return 0
 
 def create_group(name):
-  global api, api_timeout, base_url, username, password, groups
+  global api, username, password, groups
 
   if verbose:
     print(f"  Create Group: {name}")
