@@ -370,10 +370,13 @@ with open(input_file_name, 'r') as file:
         continue
       # check if we have two argument
       if len(parts) <= 2:
-        print(f"WARNING:Not enough arguments for {keyword}")
+        print(f"WARNING:Not enough arguments for {keyword}, ignoring line '!{line}'")
         #print(json.dumps(parts, indent=2))
         continue
       else:
+        # All this keywords have two arguments
+        # The first one is the search string in name of the check
+        # The second one is the value we want to set
         p1 = parts[1]
         p2 = parts[2]
         if keyword == "warn":
