@@ -1,6 +1,6 @@
 #
 # Default keyword (From here to the rest of the config file)
-!keyword /html
+!keyword_default /html
 #
 # Keywords for checks which contains this in the name
 !keyword bbb bigbluebutton
