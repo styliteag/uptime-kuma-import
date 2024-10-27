@@ -58,26 +58,32 @@ def edit_monitor_with_retry(func, id, **kwargs):
     # If we are here, we have an error
     return 0
 
-def server_add_tag(name, color):
+def server_add_tag(**kwargs):
   global api, username, password
   if verbose:
-    print(f"  Add Tag {name} with color {color}")
+    print(f"Server:Add Tag {kwargs['name']} with color {kwargs['color']}")
   success = False
   while not success:
     try:
-      result = api.add_tag(name, color)
+      result = api.add_tag(
+        **kwargs
+      )
       success = True
       return result
     except Exception as e:
+        if verbose:
+          print( "  An exception occurred:", type(e).__name__, "–", e)
         success = False
         lsuccess = False
         while not lsuccess:
           try:
-              #print(f"  Login again: {username}")
+              if verbose:
+                print(f"  Login again: {username}")
               api.login(username, password)
               lsuccess = True
           except Exception:
-              #print("Login failed")
+              if verbose:
+                print("Login failed")
               time.sleep(2)
               lsuccess = False
 
