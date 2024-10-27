@@ -61,3 +61,7 @@ google: https://google.com
 # Clear the tags
 !tag
 heise: https://www.heise.de
+
+# Check for a keyword in the Body
+!tag wordpress keyword
+wordpress_login: https://wordpress.com/log-in <form

@@ -607,7 +607,7 @@ with open(input_file_name, 'r') as file:
           expiryNotification=expiryNotification,
           timeout=timeout,
           description=f"Changed on {time.strftime('%Y-%m-%d %H:%M:%S')} by sync_stylite.py",
-          hostname=check_mk_hint # This is visible in the metrics api, we use it to gie some hints to check_mk/omd
+          hostname=check_mk_hint # This is visible in the metrics api, we use it to give some hints to check_mk/omd
         )
 
     else:
@@ -626,7 +626,7 @@ with open(input_file_name, 'r') as file:
           expiryNotification=expiryNotification,
           timeout=timeout,
           description=f"Changed on {time.strftime('%Y-%m-%d %H:%M:%S')} by sync_stylite.py",
-          hostname=check_mk_hint # This is visible in the metrics api, we use it to gie some hints to check_mk/omd
+          hostname=check_mk_hint # This is visible in the metrics api, we use it to give some hints to check_mk/omd
         )
 
     if verbose: 
