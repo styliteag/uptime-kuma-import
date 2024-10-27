@@ -50,5 +50,14 @@ ag: https://www.stylite.ag Stylite
 
 # This will be in the group "Websites"
 !group External
+
+# Bild.de uses the defaults
+bild: https://www.bild.de
+
+# Add two tags "external" and "google"
+!tag external google
 google: https://google.com
+
+# Clear the tags
+!tag
 heise: https://www.heise.de

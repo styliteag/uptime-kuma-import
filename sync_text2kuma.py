@@ -359,7 +359,11 @@ with open(input_file_name, 'r') as file:
       if keyword == "tag":
         tag = rest
         if len(tag) > 0:
-          tags.append(tag)
+          tags = []
+          # Split the tag into parts
+          parts = tag.split(" ")
+          for part in parts:
+            tags.append(part)
         else:
           # If empty Clear the tag Array
           tags = []
