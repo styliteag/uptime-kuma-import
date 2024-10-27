@@ -18,7 +18,8 @@ timeout = 10 # seconds after the monitor is considered as down
 expiryNotification = False
 
 #
-api_timeout=10
+api_timeout=5 # seconds Default is 10
+wait_events=2 # seconds Default is 0.2
 
 
 def edit_monitor_with_retry(func, id, **kwargs):
@@ -38,6 +39,7 @@ def edit_monitor_with_retry(func, id, **kwargs):
           print("Unknown function")
           return
         success = True
+        return result["monitorID"]
     except Exception as e:
         #print( "  An exception occurred:", type(e).__name__, "–", e)
         #print(f"  retrying: {id}")
@@ -54,6 +56,68 @@ def edit_monitor_with_retry(func, id, **kwargs):
               #print("Login failed")
               time.sleep(2)
               lsuccess = False
+    # If we are here, we have an error
+    return 0
+  
+def remove_tags(monitor_id, tags):
+  global api, api_timeout, base_url, username, password
+  global tag_id
+  print(f"  Remove unused tags from Monitor {monitor_id}")
+  result = api.get_monitor(monitor_id)
+  #print(json.dumps(result, indent=2))
+  monitor_tags = result["tags"]
+  # Find all monitor_tags["name"] which are not in the tags array
+  for monitor_tag in monitor_tags:
+    if monitor_tag["name"] not in tags:
+      print(f"  Remove Tag {monitor_tag['name']} with id {monitor_tag['tag_id']} from Monitor {monitor_id}")
+      api.delete_monitor_tag(
+        tag_id=monitor_tag["tag_id"],
+        monitor_id=monitor_id
+        ##value=monitor_tag["name"]
+      )
+
+def add_tag(monitor_id, tag_id):
+  global api, api_timeout, base_url, username, password
+  if verbose:
+    print(f"  Add Tag {tag_id} to Monitor {monitor_id}")
+  # Check if the tag is already assigned
+  result = api.get_monitor(monitor_id)
+  for monitor_tagid in result["tags"]:
+    if monitor_tagid["tag_id"] == tag_id:
+      if verbose:
+        print(f"  Tag {tag_id} already assigned to Monitor {monitor_id}")
+      return
+  
+  # If we are here, the tag is not assigned yet
+  success = False
+  while not success:
+    try:
+      if verbose:
+        print(f"  Add Tags")
+      result = api.add_monitor_tag(
+        tag_id=tag_id,
+        monitor_id=monitor_id
+        ##value="stylite"
+      )
+      success = True
+    except Exception as e:
+        #print( "  An exception occurred:", type(e).__name__, "–", e)
+        #print(f"  retrying: {id}")
+        success = False
+        #api.disconnect()
+        #api = UptimeKumaApi(base_url ,timeout=api_timeout)
+        lsuccess = False
+        while not lsuccess:
+          try:
+              #print(f"  Login again: {username}")
+              api.login(username, password)
+              lsuccess = True
+          except Exception:
+              #print("Login failed")
+              time.sleep(2)
+              lsuccess = False
+    # If we are here, we have an error
+    return 0
 
 def create_group(name):
   global api, api_timeout, base_url, username, password, groups
@@ -103,6 +167,7 @@ if "-h" in sys.argv:
   print(f"Usage: {sys.argv[0]} [-u] [-f input_file] [-c config_file]")
   print("  -h: show this help")
   print("  -u: update the existing monitors")
+  print("  -r: remove unused tags")
   print("  -c config_file: use the config file (default: SCRIPTNAME.ini)")
   print("  -f input_file: use the file input_file as input (default: urls.txt)")
   print("  -v: verbose output")
@@ -116,6 +181,10 @@ if "-v" in sys.argv:
 do_updates = False
 if "-u" in sys.argv:
   do_updates = True
+
+remove_unused_tags = False
+if "-r" in sys.argv:
+  remove_unused_tags = True
 
 try_only = False
 if "-n" in sys.argv:
@@ -161,7 +230,7 @@ if verbose:
   print(f"Base URL: {base_url}")
   print(f"Username: {username}")
   #print(f"Password: {password}")
-api = UptimeKumaApi(base_url ,timeout=api_timeout)
+api = UptimeKumaApi(base_url ,timeout=api_timeout, wait_events=wait_events)
 #if verbose:
 #  print(f"API: {api}")
 api.login(username, password)
@@ -213,6 +282,8 @@ resendIntervals = {}
 maxretriess = {}
 timeouts = {}
 expiryNotifications = {}
+tags = []
+tag_id = {}
 with open(input_file_name, 'r') as file:
   # Read a line from the ffile until the end of the file
   for line in file:
@@ -288,6 +359,14 @@ with open(input_file_name, 'r') as file:
           expiryNotification = True
         else:
           expiryNotification = False
+        continue
+      if keyword == "tag":
+        tag = rest
+        if len(tag) > 0:
+          tags.append(tag)
+        else:
+          # If empty Clear the tag Array
+          tags = []
         continue
       # check if we have two argument
       if len(parts) <= 2:
@@ -479,7 +558,30 @@ with open(input_file_name, 'r') as file:
           print(f"Group {group} could not be created")
         exit(1)
       
+    # Find the tag IDs
+    server_tags_queried = False
+    if server_tags_queried == False:
+      server_tags = api.get_tags()
+      for server_tag in server_tags:
+        if verbose:
+          print(f"  Server Tag: {server_tag['name']} with ID {server_tag['id']}")
+        tag_id[server_tag["name"]] = server_tag["id"]
+      server_tags_queried = True
+
+    # Add the tags if the tags array which does not exist yet
+    for tag in tags:
+      if tag not in tag_id:
+        result = api.add_tag(
+          name=tag,
+          color="#900000"
+        )
+        tag_id[tag] = result["id"]
+        if verbose:
+          print(f"  Tag {tag} added with ID {tag_id[tag]}")
+      
+        
     # Check if the Monitor already exists
+    monID = 0
     if myname in monitor_name:
       #id=monitor_name.index(myname)
       id=monitor_id[monitor_name.index(myname)]
@@ -489,7 +591,7 @@ with open(input_file_name, 'r') as file:
         print(f"  Not updating '{myname}'")
         continue
       if not try_only:
-        edit_monitor_with_retry("edit", id,
+        monID = edit_monitor_with_retry("edit", id,
             type=check_type,
             name=myname,
           url=url,
@@ -505,11 +607,10 @@ with open(input_file_name, 'r') as file:
           hostname=check_mk_hint # This is visible in the metrics api, we use it to gie some hints to check_mk/omd
         )
 
-      continue
-
-    print(f"  Monitor add: '{myname}'")
-    if not try_only:
-      edit_monitor_with_retry("add", 0,
+    else:
+      print(f"  Monitor add: '{myname}'")
+      if not try_only:
+        monID = edit_monitor_with_retry("add", 0,
           type=check_type,
           name=myname,
           url=url,
@@ -523,6 +624,14 @@ with open(input_file_name, 'r') as file:
           timeout=timeout,
           description=f"Changed on {time.strftime('%Y-%m-%d %H:%M:%S')} by sync_stylite.py",
           hostname=check_mk_hint # This is visible in the metrics api, we use it to gie some hints to check_mk/omd
-      )
+        )
 
+    if verbose: 
+      print(f"  Monitor ID: {monID}")
+    if monID > 0:
+      # Add the tags
+      for tag in tags:
+        add_tag(monID, tag_id[tag])
+      if remove_unused_tags:
+        remove_tags(monID, tags)
 api.disconnect()
