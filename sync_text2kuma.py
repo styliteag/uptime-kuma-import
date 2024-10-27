@@ -16,6 +16,7 @@ resendInterval = 60
 maxretries = 3
 timeout = 10 # seconds after the monitor is considered as down
 expiryNotification = False
+server_tags_queried = False
 
 #
 api_timeout=5 # seconds Default is 10
@@ -580,7 +581,6 @@ with open(input_file_name, 'r') as file:
         exit(1)
       
     # Find the tag IDs
-    server_tags_queried = False
     if server_tags_queried == False:
       server_tags = api.get_tags()
       for server_tag in server_tags:
