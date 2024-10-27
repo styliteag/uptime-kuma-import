@@ -57,7 +57,30 @@ def edit_monitor_with_retry(func, id, **kwargs):
               lsuccess = False
     # If we are here, we have an error
     return 0
-  
+
+def server_add_tag(name, color):
+  global api, username, password
+  if verbose:
+    print(f"  Add Tag {name} with color {color}")
+  success = False
+  while not success:
+    try:
+      result = api.add_tag(name, color)
+      success = True
+      return result
+    except Exception as e:
+        success = False
+        lsuccess = False
+        while not lsuccess:
+          try:
+              #print(f"  Login again: {username}")
+              api.login(username, password)
+              lsuccess = True
+          except Exception:
+              #print("Login failed")
+              time.sleep(2)
+              lsuccess = False
+
 def remove_tags(monitor_id, tags):
   global api, username, password
   if verbose:
@@ -592,7 +615,7 @@ with open(input_file_name, 'r') as file:
     # Add the tags if the tags array which does not exist yet
     for tag in tags:
       if tag not in tag_id:
-        result = api.add_tag(
+        result = server_add_tag(
           name=tag,
           color="#900000"
         )
