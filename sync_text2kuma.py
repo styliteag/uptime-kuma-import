@@ -37,7 +37,7 @@ def edit_monitor_with_retry(func, id, **kwargs):
           result = api.edit_monitor(id, **kwargs)
         else:
           print("Unknown function")
-          return
+          return 0
         success = True
         return result["monitorID"]
     except Exception as e:
