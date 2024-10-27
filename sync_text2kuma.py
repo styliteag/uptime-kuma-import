@@ -61,19 +61,37 @@ def remove_tags(monitor_id, tags):
   global api, username, password
   if verbose:
     print(f"  Remove unused tags from Monitor {monitor_id}")
-  result = api.get_monitor(monitor_id)
-  #print(json.dumps(result, indent=2))
-  monitor_tags = result["tags"]
-  # Find all monitor_tags["name"] which are not in the tags array
-  for monitor_tag in monitor_tags:
-    if monitor_tag["name"] not in tags:
-      print(f"  Remove Tag {monitor_tag['name']} with id {monitor_tag['tag_id']} from Monitor {monitor_id}")
-      api.delete_monitor_tag(
-        tag_id=monitor_tag["tag_id"],
-        monitor_id=monitor_id
-        ##value=monitor_tag["name"]
-      )
-
+  success = False
+  while not success:
+    try:
+      result = api.get_monitor(monitor_id)
+      #print(json.dumps(result, indent=2))
+      monitor_tags = result["tags"]
+      # Find all monitor_tags["name"] which are not in the tags array
+      for monitor_tag in monitor_tags:
+        if monitor_tag["name"] not in tags:
+          print(f"  Remove Tag {monitor_tag['name']} with id {monitor_tag['tag_id']} from Monitor {monitor_id}")
+          api.delete_monitor_tag(
+            tag_id=monitor_tag["tag_id"],
+            monitor_id=monitor_id
+            ##value=monitor_tag["name"]
+          )
+      success = True
+    except Exception as e:
+        #print( "  An exception occurred:", type(e).__name__, "–", e)
+        #print(f"  retrying: {id}")
+        success = False
+        lsuccess = False
+        while not lsuccess:
+          try:
+              #print(f"  Login again: {username}")
+              api.login(username, password)
+              lsuccess = True
+          except Exception:
+              #print("Login failed")
+              time.sleep(2)
+              lsuccess = False
+  
 def add_tag(monitor_id, tag_id):
   global api, api_timeout, base_url, username, password
   if verbose:
