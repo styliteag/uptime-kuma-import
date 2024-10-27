@@ -79,17 +79,17 @@ def add_tag(monitor_id, tag_id):
   if verbose:
     print(f"  Add Tag {tag_id} to Monitor {monitor_id}")
   # Check if the tag is already assigned
-  result = api.get_monitor(monitor_id)
-  for monitor_tagid in result["tags"]:
-    if monitor_tagid["tag_id"] == tag_id:
-      if verbose:
-        print(f"  Tag {tag_id} already assigned to Monitor {monitor_id}")
-      return
-  
-  # If we are here, the tag is not assigned yet
   success = False
   while not success:
     try:
+  
+      result = api.get_monitor(monitor_id)
+      for monitor_tagid in result["tags"]:
+        if monitor_tagid["tag_id"] == tag_id:
+          if verbose:
+            print(f"  Tag {tag_id} already assigned to Monitor {monitor_id}")
+          return
+      # If we are here, the tag is not assigned yet
       if verbose:
         print(f"  Add Tags")
       result = api.add_monitor_tag(
