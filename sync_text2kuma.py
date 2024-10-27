@@ -10,12 +10,13 @@ import configparser
 from uptime_kuma_api import UptimeKumaApi, MonitorType
 
 # default values
-interval = 120
-retryInterval = 120
-resendInterval = 60
-maxretries = 3
-timeout = 10 # seconds after the monitor is considered as down
-expiryNotification = False
+interval_default = 120
+retryInterval_default = 120
+resendInterval_default = 60
+maxretries_default = 3
+timeout_default = 10 # seconds after the monitor is considered as down
+expiryNotification_default = False
+#
 server_tags_queried = False
 
 #
@@ -31,10 +32,12 @@ def edit_monitor_with_retry(func, id, **kwargs):
         if func == "add":
           if verbose:
             print(f"  Add Monitor: '{kwargs['name']}'")
+            print(json.dumps(kwargs, indent=2))
           result = api.add_monitor(**kwargs)
         elif func == "edit":
           if verbose:
             print(f"  Edit Monitor: '{id}'")
+            print(json.dumps(kwargs, indent=2))
           result = api.edit_monitor(id, **kwargs)
         else:
           print("Unknown function")
@@ -383,26 +386,26 @@ with open(input_file_name, 'r') as file:
         continue
       #check_mk_warn = check_mk_warn_default
       if keyword == "interval_default":
-        interval = int(rest)
+        interval_default = int(rest)
         continue
       if keyword == "retryInterval_default":
-        retryInterval = int(rest)
+        retryInterval_default = int(rest)
         continue
       if keyword == "resendInterval_default":
-        resendInterval = int(rest)
+        resendInterval_default = int(rest)
         continue
       if keyword == "maxretries_default":
-        maxretries = int(rest)
+        maxretries_default = int(rest)
         continue
       if keyword == "timeout_default":
-        timeout = int(rest)
+        timeout_default = int(rest)
         continue
       if keyword == "expiryNotification_default":
-        expiryNotification1 = int(rest)
-        if expiryNotification1 == 1:
-          expiryNotification = True
+        expiryNotification_default1 = int(rest)
+        if expiryNotification_default1 == 1:
+          expiryNotification_default = True
         else:
-          expiryNotification = False
+          expiryNotification_default = False
         continue
       if keyword == "tag":
         tag = rest
@@ -532,8 +535,17 @@ with open(input_file_name, 'r') as file:
       expiryNotification = False
     
     #if check_for == "":
-    # Loop over all dictionaries
+    check_mk_warn = check_mk_warn_default
     check_for_temp = ""
+    check_for = check_for_default
+    url_suffix = url_suffix_default
+    interval = interval_default
+    retryInterval = retryInterval_default
+    resendInterval = resendInterval_default
+    maxretries = maxretries_default
+    timeout = timeout_default
+    expiryNotification = expiryNotification_default
+    # Loop over all dictionaries    
     for dictionary in [warntimes, keywords, keyword_urls, intervals, retryIntervals, resendIntervals, maxretriess, timeouts, expiryNotifications]:
       for search in dictionary:
         if search in check: # if check.contains(search)
@@ -562,17 +574,20 @@ with open(input_file_name, 'r') as file:
         check_for = check_for_temp
       # End of loop over all dictionaries
 
+    if verbose:
+      print(f"    URL: '{url}', Check for: '{check_for}', URL Suffix: '{url_suffix}' (default: '{url_suffix_default}')")
     if url_suffix == "":
       url_suffix = url_suffix_default
     if url_suffix != "":
       # Strip a trailing / from the url
-      if url.endswith("/"):
-        url = url[:-1]
+      #if url.endswith("/"):
+      #  url = url[:-1]
       # strip a leading / from the url_suffix
       if url_suffix.startswith("/"):
         url_suffix = url_suffix[1:]
       url = url + "/" + url_suffix
-      #print(f"  URL: {url}")
+      if verbose:
+        print(f"    -> URL: {url}")
         
       
       check_mk_hint = ""
